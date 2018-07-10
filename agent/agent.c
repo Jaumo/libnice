@@ -2361,37 +2361,6 @@ void agent_signal_component_state_change (NiceAgent *agent, guint stream_id, gui
       stream_id, component_id, nice_component_state_to_string (old_state),
       nice_component_state_to_string (new_state));
 
-  /* Check whether it’s a valid state transition. */
-#define TRANSITION(OLD, NEW) \
-  (old_state == NICE_COMPONENT_STATE_##OLD && \
-   new_state == NICE_COMPONENT_STATE_##NEW)
-
-  g_assert (/* Can (almost) always transition to FAILED (including
-             * DISCONNECTED → FAILED which happens if one component fails
-             * before another leaves DISCONNECTED): */
-            TRANSITION (DISCONNECTED, FAILED) ||
-            TRANSITION (GATHERING, FAILED) ||
-            TRANSITION (CONNECTING, FAILED) ||
-            TRANSITION (CONNECTED, FAILED) ||
-            TRANSITION (READY, FAILED) ||
-            /* Standard progression towards a ready connection: */
-            TRANSITION (DISCONNECTED, GATHERING) ||
-            TRANSITION (GATHERING, CONNECTING) ||
-            TRANSITION (CONNECTING, CONNECTED) ||
-            TRANSITION (CONNECTED, READY) ||
-            /* priv_conn_check_add_for_candidate_pair_matched(): */
-            TRANSITION (READY, CONNECTED) ||
-            /* If set_remote_candidates() is called with new candidates after
-             * reaching FAILED: */
-            TRANSITION (FAILED, CONNECTING) ||
-            /* if new relay servers are added to a failed connection */
-            TRANSITION (FAILED, GATHERING) ||
-            /* Possible by calling set_remote_candidates() without calling
-             * nice_agent_gather_candidates(): */
-            TRANSITION (DISCONNECTED, CONNECTING));
-
-#undef TRANSITION
-
   component->state = new_state;
 
   if (agent->reliable)
